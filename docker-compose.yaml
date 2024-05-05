@@ -73,10 +73,10 @@ x-airflow-common:
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -282,5 +282,38 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  # Additional SFTP services for file transfers
+  sftp-source:
+    image: atmoz/sftp
+    volumes:
+      - ./sftp_source_data:/home/source/upload
+    ports:
+      - "2222:22"
+    command: source:password:::upload
+    restart: always
+
+  sftp-target:
+    image: atmoz/sftp
+    volumes:
+      - ./sftp_target_data:/home/target/upload
+    ports:
+      - "2223:22"
+    command: target:password:::upload
+    restart: always
+
+  filebrowser:
+    image: filebrowser/filebrowser
+    volumes:
+      - ./sftp_source_data:/srv/sftp_source
+      - ./sftp_target_data:/srv/sftp_target
+      - ./filebrowser_db:/database
+    ports:
+      - "8081:80"
+    command: "--database=/database/database.db --root=/srv"
+    restart: always
+
 volumes:
   postgres-db-volume:
+  sftp_source_data:
+  sftp_target_data:
+  filebrowser_db:
