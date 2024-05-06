@@ -1,1 +1,4 @@
 airflow/logs/
+sftp_source_data/
+sftp_target_data/
+filebrower_db
